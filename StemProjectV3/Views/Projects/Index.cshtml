@@ -1,0 +1,144 @@
+﻿@model StemProjectV3.Models.SchoolViewModels.ProjectIndexData
+
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<h2>Projects</h2>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<form asp-action="Index" method="get">
+    <div class="form-actions no-color">
+        <p>
+            Find by text: <input type="text" name="SearchString" value="@ViewData["currentFilter"]"/>
+            <input type="submit" value="Search" class="btn btn-default"/> |
+            <a asp-action="Index">Back to Full List</a>
+        </p>
+    </div>
+</form>
+<table class="table">
+    <thead>
+        <tr>
+                <th>
+                    ID
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]">Name</a>
+                </th>
+                <th>
+                    Abstract
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["DateSortParm"]">Date</a>
+                </th>
+                <th>
+                    Students
+                </th>
+                <th>
+                    Mentors
+                </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Projects) {
+    string selectedRow = "";
+    if(item.ProjectID == (int?)ViewData["ProjectID"])
+    {
+        selectedRow = "success";
+    }
+        <tr class="@selectedRow">
+            <td>
+                @Html.DisplayFor(modelItem => item.ProjectID)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Abstract)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ProjectDate)
+            </td>
+            <td>
+               @foreach(var student in item.Enrollments)
+               {
+                   @student.Student.FirstName @student.Student.LastName <br />
+
+               }
+            </td>
+            <td>
+                @foreach(var mentor in item.ProjectAssignments)
+                {
+                    @mentor.Mentor.FirstName @mentor.Mentor.LastName <br />
+
+                }
+            </td>
+            <td>
+                <a asp-action="Index" asp-route-id="@item.ProjectID">Select</a> |
+                <a asp-action="Edit" asp-route-id="@item.ProjectID">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.ProjectID">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ProjectID">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+@if (Model.Assignments != null)
+{
+    <h3>Mentors assigned to Selected Project</h3>
+    <table class="table">
+        <tr>
+            <th>First Name</th>
+            <th>Last name</th>
+            <th>Email</th>
+        </tr>
+
+        @foreach( var item in Model.Assignments)
+        {
+            <tr>
+                <td>
+                    @item.Mentor.FirstName
+                </td>
+                <td>
+                    @item.Mentor.LastName
+                </td>
+                <td>
+                    @item.Mentor.Email
+                </td>
+            </tr>
+
+        }
+    </table>
+}
+
+@if(Model.Enrollments != null)
+{
+    <h3>Students assigned to Selected Project</h3>
+    <table class="table">
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Grad Date</th>
+        </tr>
+        @foreach(var item in Model.Enrollments)
+        {
+            <tr>
+                <td>
+                    @item.Student.FirstName
+                </td>
+                <td>
+                    @item.Student.LastName
+                </td>
+                <td>
+                    @item.Student.GradDate
+                </td>
+            </tr>
+
+        }
+    </table>
+
+}

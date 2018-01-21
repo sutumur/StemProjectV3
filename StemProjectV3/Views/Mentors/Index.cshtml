@@ -1,0 +1,144 @@
+﻿@model StemProjectV3.Models.SchoolViewModels.MentorIndexData
+
+@{
+    ViewData["Title"] = "Mentors";
+}
+
+<h2>Mentors</h2>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+                <th>
+                    Last Name
+                </th>
+                <th>
+                    First Name
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Support Area
+                </th>
+                <th>
+                    Discipline
+                </th>
+                <th>
+                    Comment
+                </th>
+                <th>
+                    Projects
+                </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Mentors) {
+    string selectedRow = "";
+    if(item.ID == (int?)ViewData["MentorID"])
+    {
+        selectedRow = "success";
+    }
+        <tr class="@selectedRow">
+            <td>
+                @Html.DisplayFor(modelItem => item.LastName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FirstName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.SupportArea)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Discipline)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Comment)
+            </td>
+            <td>
+                @{ 
+                    foreach(var project in item.ProjectAssignments)
+                    {
+                        @project.Project.ProjectID @: @project.Project.Name <br />
+                    }
+                }
+            </td>
+            <td>
+                <a asp-action="Index" asp-route-id="@item.ID">Select</a> |
+                <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.ID">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+@if(Model.Projects != null)
+{
+    <h3>Projects mentored by Selected Mentor</h3>
+    <table class="table">
+        <tr>
+            <th>
+            </th>
+            <th>Number</th>
+            <th>Name</th>
+        </tr>
+        @foreach (var item in Model.Projects)
+        {
+            string selectedRow = "";
+            if(item.ProjectID == (int?)ViewData["projectID"])
+            {
+                selectedRow = "success";
+            }
+            <tr class="@selectedRow">
+                <td>
+                    @Html.ActionLink("Select", "Index", new { projectID = item.ProjectID})
+                </td>
+                <td>
+                    @item.ProjectID
+                </td>
+                <td>
+                    @item.Name
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+@if(Model.Enrollments != null)
+{
+    <h3>
+        Students enrolled in Selected project
+    </h3>
+    <table class="table">
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Grad Date</th>
+        </tr>
+        @foreach(var item in Model.Enrollments)
+        {
+            <tr>
+                <td>
+                    @item.Student.FirstName
+                </td>
+                <td>
+                    @item.Student.LastName
+                </td>
+                <td>
+                    @item.Student.GradDate
+                </td>
+            </tr>
+
+        }
+    </table>
+
+}
