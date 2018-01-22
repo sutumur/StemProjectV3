@@ -33,6 +33,62 @@
                 <span asp-validation-for="ProjectDate" class="text-danger"></span>
             </div>
             <div class="form-group">
+                Mentors
+                <div calss="col-md-offset-2 col-md-10">
+                    <table>
+                        <tr>
+                            @{ 
+                                int cnt = 0;
+                                List<StemProjectV3.Models.SchoolViewModels.AssignedMentorData> mentors = ViewBag.Mentors;
+
+                                foreach (var mentor in mentors)
+                                {
+                                    if (cnt++ % 3 == 0)
+                                    {
+                                        @:</tr><tr>
+                                    }
+                                    @:<td>
+                                        <input type="checkbox" 
+                                               name="selectedMentors"
+                                               value="@mentor.ID"
+                                               @(Html.Raw(mentor.Assigned ? "checked=\"checked\"" : "")) />
+                                               @mentor.ID @: @mentor.FirstName
+                                        @:</td>
+                                }
+                                @:</tr>
+                            }
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
+                Students:
+                <div class="col-md-offset-2 col-md-10">
+                    <table>
+                        <tr>
+                            @{ 
+                                cnt = 0;
+                                List<StemProjectV3.Models.SchoolViewModels.AssignedStudentData> students = ViewBag.Students;
+
+                                foreach(var student in students)
+                                {
+                                    if(cnt++ % 3 == 0)
+                                    {
+                                        @:</tr><tr>
+                                    }
+                                    @:<td>
+                                        <input type="checkbox"
+                                               name="selectedStudents"
+                                               value="@student.ID"
+                                               @(Html.Raw(student.Assigned ? "checke\"checked\"" : "")) />
+                                               @student.ID @: @student.FirstName
+                                    @:</td>
+                                }
+                                @:</tr>
+                            }
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-default" />
             </div>
         </form>

@@ -117,6 +117,7 @@ namespace StemProjectV3.Controllers
 
             var project = await _context.Projects
                 .Include(p => p.ProjectAssignments).ThenInclude(m => m.Mentor)
+                .Include(p => p.Enrollments).ThenInclude(s => s.Student)
                 .AsNoTracking()
                 .SingleOrDefaultAsync(p => p.ProjectID == id);
             if(project == null)
@@ -124,13 +125,14 @@ namespace StemProjectV3.Controllers
                 return NotFound();
             }
 
+            PopulateAssignedStudentData(project);
             PopulateAssignedMentorData(project);
             return View(project);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int? id, string[] selectedMentors)
+        public async Task<IActionResult> Edit(int? id, string[] selectedMentors, string[] selectedStudents)
         {
             if(id == null)
             {
@@ -140,11 +142,15 @@ namespace StemProjectV3.Controllers
             var projectToUpdate = await _context.Projects
                 .Include(p => p.ProjectAssignments)
                     .ThenInclude(p => p.Mentor)
+                .Include(p=>p.Enrollments)
+                    .ThenInclude(p=>p.Student)
                 .SingleOrDefaultAsync(m => m.ProjectID == id);
 
-            if (await TryUpdateModelAsync<Project>(projectToUpdate, "", i => i.Name, i=> i.Abstract))
+            if (await TryUpdateModelAsync<Project>(projectToUpdate, "", i => i.Name, i=> i.Abstract, i=>i.ProjectDate))
             {
                 UpdateProjectMentors(selectedMentors, projectToUpdate);
+                UpdateProjectStudents(selectedStudents, projectToUpdate);
+
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -157,7 +163,9 @@ namespace StemProjectV3.Controllers
                 return RedirectToAction(nameof(Index));
             }
             UpdateProjectMentors(selectedMentors, projectToUpdate);
+            UpdateProjectStudents(selectedStudents, projectToUpdate);
             PopulateAssignedMentorData(projectToUpdate);
+            PopulateAssignedStudentData(projectToUpdate);
             return View(projectToUpdate);
         }
 
@@ -190,6 +198,37 @@ namespace StemProjectV3.Controllers
                 }
             }
         }
+
+        private void UpdateProjectStudents(string[] selectedStudents, Project projectToUpdate)
+        {
+            if(selectedStudents == null)
+            {
+                projectToUpdate.Enrollments = new List<Enrollment>();
+                return;
+            }
+
+            var selectedStudentHS = new HashSet<string>(selectedStudents);
+            var projectStudents = new HashSet<int>(projectToUpdate.Enrollments.Select(p => p.Student.ID));
+            foreach(var student in _context.Students)
+            {
+                if (selectedStudentHS.Contains(student.ID.ToString()))
+                {
+                    if (!projectStudents.Contains(student.ID))
+                    {
+                        projectToUpdate.Enrollments.Add(new Enrollment { ProjectID = projectToUpdate.ProjectID, StudentID = student.ID });
+                    }
+                }
+                else
+                {
+                    if (projectStudents.Contains(student.ID))
+                    {
+                        Enrollment enrollment = projectToUpdate.Enrollments.SingleOrDefault(i => i.StudentID == student.ID);
+                        _context.Remove(enrollment);
+                    }
+                }
+            }
+        }
+
         private void PopulateAssignedMentorData(Project project)
         {
             var allMentors = _context.Mentors;
@@ -206,6 +245,70 @@ namespace StemProjectV3.Controllers
                 });
             }
             ViewData["Mentors"] = viewModel;
+        }
+
+        private void PopulateAssignedStudentData(Project project)
+        {
+            var allStudents = _context.Students;
+            var studentEnrollments = new HashSet<int>(project.Enrollments.Select(s => s.StudentID));
+            var viewModel = new List<AssignedStudentData>();
+            foreach(var student in allStudents)
+            {
+                viewModel.Add(new AssignedStudentData
+                {
+                    ID = student.ID,
+                    FirstName = student.FirstName,
+                    LastName = student.LastName,
+                    Assigned = studentEnrollments.Contains(student.ID)
+                });
+            }
+            ViewData["Students"] = viewModel;
+        }
+
+        public IActionResult Create()
+        {
+            var project = new Project();
+            project.ProjectAssignments = new List<ProjectAssignment>();
+            project.Enrollments = new List<Enrollment>();
+            PopulateAssignedMentorData(project);
+            PopulateAssignedStudentData(project);
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Name", "Abstract", "ProjectDate")] Project project, string[] selectedMentors, string[] selectedStudents)
+        {
+            if(selectedMentors != null)
+            {
+                project.ProjectAssignments = new List<ProjectAssignment>();
+                foreach(var mentor in selectedMentors)
+                {
+                    var mentorToAdd = new ProjectAssignment { ProjectID = project.ProjectID, MentorID = int.Parse(mentor) };
+                    project.ProjectAssignments.Add(mentorToAdd);
+                }
+            }
+
+            if(selectedStudents != null)
+            {
+                project.Enrollments = new List<Enrollment>();
+                foreach(var student in selectedStudents)
+                {
+                    var studentToAdd = new Enrollment { ProjectID = project.ProjectID, StudentID = int.Parse(student) };
+                    project.Enrollments.Add(studentToAdd);
+                }
+            }
+
+            if (ModelState.IsValid)
+            {
+                _context.Add(project);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            PopulateAssignedMentorData(project);
+            PopulateAssignedStudentData(project);
+            return View(project);
         }
         //// GET: Projects/Create
         //public IActionResult Create()
@@ -303,10 +406,18 @@ namespace StemProjectV3.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var project = await _context.Projects.SingleOrDefaultAsync(m => m.ProjectID == id);
+            Project project = await _context.Projects
+                .Include(i => i.ProjectAssignments)
+                .Include(i => i.Enrollments)
+                .SingleAsync(i => i.ProjectID == id);
             _context.Projects.Remove(project);
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+            //var project = await _context.Projects.SingleOrDefaultAsync(m => m.ProjectID == id);
+            //_context.Projects.Remove(project);
+            //await _context.SaveChangesAsync();
+            //return RedirectToAction(nameof(Index));
         }
 
         private bool ProjectExists(int id)

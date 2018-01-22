@@ -29,6 +29,7 @@
                 <span asp-validation-for="ProjectDate" class="text-danger"></span>
             </div>
             <div class="form-group">
+                Mentors:
                 <div class="col-md-offset-2 col-md-10">
                     <table>
                         <tr>
@@ -50,6 +51,33 @@
                                     @:</td>
                                 @:</tr>
                                 }
+                            }
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
+                Students:
+                <div class="col-md-offset-2 col0md-10">
+                    <table>
+                        <tr>
+                            @{ 
+                                cnt = 0;
+                                List<StemProjectV3.Models.SchoolViewModels.AssignedStudentData> students = ViewBag.Students;
+                                foreach(var student in students)
+                                {
+                                    if(cnt++ % 3 == 0)
+                                    {
+                                        @:</tr><tr>
+                                    }
+                                    @:<td>
+                                        <input type="checkbox"
+                                               name="selectedStudents"
+                                               value="@student.ID"
+                                               @(Html.Raw(student.Assigned ? "checked=\"checked\"" : ""))/>
+                                               @student.ID @: @student.FirstName
+                                    @:</td>
+                                }
+                                @:</tr>
                             }
                     </table>
                 </div>
